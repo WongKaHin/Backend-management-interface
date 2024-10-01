@@ -3,6 +3,8 @@ import { Row, Col, Card, Table } from 'antd'
 import './home.css'
 import { getData } from '../../api'
 import * as Icon from '@ant-design/icons';
+import MyEchart from '../../components/Echarts'
+
 
 //table的數據
 const columns = [
@@ -66,11 +68,53 @@ const iconToElement = (name) => React.createElement(Icon[name])
 
 const Home = () => {
     const userImg = require("../../assets/images/user.jpg")
+    const[ echartData, setEchartData ] = useState({})
+    //dom首次渲染完成
     useEffect(() => {
         getData().then(({ data }) => {
-            console.log(data,'res')
-            const { tableData } = data.data
+            console.log(data, 'res')
+            const { tableData, orderData, userData, videoData } = data.data
             setTableData(tableData)
+            const order = orderData
+            const xData = order.date
+            const keyArray = Object.keys(order.data[0])
+            const series = []
+            keyArray.forEach(key => {
+                series.push({
+                    name: key,
+                    data: order.data.map(item => item[key]),
+                    type: 'line'
+                })
+            })
+            setEchartData({
+                order: {
+                    xData,
+                    series
+                },
+                user: {
+                    xData: userData.map( item => item.date),
+                    series: [
+                        {
+                            name: '新增用戶',
+                            data: userData.map( item => item.new ),
+                            type:'bar'
+                        },
+                        {
+                            name: '活躍用戶',
+                            data: userData.map( item => item.active ),
+                            type:'bar'
+                        },
+                    ]
+                },
+                video: {
+                    series: [
+                        {
+                            data: videoData,
+                            type: 'pie'
+                        }
+                    ]
+                }
+            })
         })
     }, [])
     //定義table數據
@@ -113,6 +157,11 @@ const Home = () => {
                             )
                         })
                     }
+                </div>
+                { echartData.order && <MyEchart chartData={echartData.order} style={{height: '280px'}}/> }
+                <div className="graph">
+                    { echartData.user && <MyEchart chartData={echartData.user} style={{height: '240px', width: '50%'}}/> }
+                    { echartData.video && <MyEchart chartData={echartData.video} isAxisChart={false} style={{height: '260px', width: '50%'}}/> }
                 </div>
             </Col>
         </Row>
